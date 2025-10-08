@@ -3,16 +3,17 @@ import ChessBoard from "./components/ChessBoard";
 import ChessControls from "./components/ChessControls";
 
 function App() {
+  const boardRef = useRef();
+
   const config = {
     draggable: true,
     dropOffBoard: "snapback",
     position: "start",
   };
-  const boardRef = useRef();
 
   return (
     <div style={{ textAlign: "center" }}>
-      <h1>React + Chessboard.js</h1>
+      <h1>React + Chessboard.js + Chess.js</h1>
       <ChessBoard ref={boardRef} config={config} />
       <ChessControls boardRef={boardRef} />
     </div>

@@ -1,23 +1,59 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
+import { Chess } from "chess.js";
 
 const ChessBoard = forwardRef(({ config }, ref) => {
   const boardContainerRef = useRef();
   const boardInstance = useRef();
+  const game = useRef(new Chess());
 
   useEffect(() => {
     if (window.ChessBoard && boardContainerRef.current) {
-      boardInstance.current = window.ChessBoard(
-        boardContainerRef.current,
-        config
-      );
+      boardInstance.current = window.ChessBoard(boardContainerRef.current, {
+        ...config,
+        onDrop: (source, target) => {
+          const move = game.current.move({
+            from: source,
+            to: target,
+            promotion: "q",
+          });
+
+          if (!move) return "snapback";
+
+          boardInstance.current.position(game.current.fen());
+        },
+      });
+
+      const handleRightClick = (event) => {
+        event.preventDefault();
+        game.current.undo();
+        boardInstance.current.position(game.current.fen());
+      };
+
+      const node = boardContainerRef.current;
+      node.addEventListener("contextmenu", handleRightClick);
+
+      return () => {
+        node.removeEventListener("contextmenu", handleRightClick);
+      };
     } else {
-      console.error("Chessboard.js no está disponible.");
+      console.error("Chessboard no disponible");
     }
   }, [config]);
 
   useImperativeHandle(ref, () => ({
-    start: () => boardInstance.current?.position("start"),
-    clear: () => boardInstance.current?.position({}),
+    start: () => {
+      game.current.reset();
+      boardInstance.current?.position("start");
+    },
+    clear: () => {
+      game.current.clear();
+      boardInstance.current?.position({});
+    },
+    undo: () => {
+      game.current.undo();
+      boardInstance.current?.position(game.current.fen());
+    },
+    getFEN: () => game.current.fen(),
   }));
   return (
     <div
