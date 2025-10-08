@@ -1,34 +1,20 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
+import ChessBoard from "./components/ChessBoard";
+import ChessControls from "./components/ChessControls";
 
 function App() {
-  const boardRef = useRef(null);
   const config = {
     draggable: true,
-    dropOffBoard: "snapback", // this is the default
+    dropOffBoard: "snapback",
     position: "start",
   };
-
-  useEffect(() => {
-    setTimeout(() => {
-      if (window.Chessboard) {
-        window.Chessboard(boardRef.current, config);
-      } else {
-        console.error("Chessboard.js no está disponible en window.");
-      }
-    }, 100);
-  }, []);
+  const boardRef = useRef();
 
   return (
     <div style={{ textAlign: "center" }}>
       <h1>React + Chessboard.js</h1>
-      <div
-        ref={boardRef}
-        id="board1"
-        style={{ width: "400px", margin: "20px auto" }}
-      ></div>
-      <button id="clearBoardBtn">Clear Board</button>
-      <button id="startPositionBtn">Start Position</button>
-      <button id="clearBoardInstantBtn">Clear Board Instant</button>
+      <ChessBoard ref={boardRef} config={config} />
+      <ChessControls boardRef={boardRef} />
     </div>
   );
 }
