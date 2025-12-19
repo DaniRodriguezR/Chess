@@ -1,13 +1,29 @@
-export default function ChessControls({ boardRef }) {
-  const handleClear = () => boardRef.current?.clear();
-  const handleStart = () => boardRef.current?.start();
-  const handleUndo = () => boardRef.current?.undo();
-
+// Componente ChessControls
+export function ChessControls({ game, onReset, onUndo }) {
   return (
-    <div stryle={{ marginTop: "20px" }}>
-      <button onClick={handleClear}>Clear Board</button>
-      <button onClick={handleStart}>Start Position</button>
-      <button onClick={handleUndo}>Undo Move</button>
+    <div style={{ marginTop: "20px" }}>
+      <button
+        onClick={onReset}
+        style={{
+          padding: "10px 20px",
+          margin: "0 5px",
+          fontSize: "16px",
+          cursor: "pointer",
+        }}
+      >
+        Nuevo Juego
+      </button>
+      <button
+        onClick={onUndo}
+        style={{
+          padding: "10px 20px",
+          margin: "0 5px",
+          fontSize: "16px",
+          cursor: "pointer",
+        }}
+      >
+        Deshacer
+      </button>
     </div>
   );
 }

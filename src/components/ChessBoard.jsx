@@ -1,65 +1,47 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
-import { Chess } from "chess.js";
+import { game, onDragStartLogic, onDropLogic } from "../utils/chessFunctions";
 
-const ChessBoard = forwardRef(({ config }, ref) => {
-  const boardContainerRef = useRef();
-  const boardInstance = useRef();
-  const game = useRef(new Chess());
+const ChessBoard = forwardRef(function ChessBoard({ onChange }, ref) {
+  const containerRef = useRef(null);
+  const boardRef = useRef(null); // Aquí vive el tablero real
 
   useEffect(() => {
-    if (window.ChessBoard && boardContainerRef.current) {
-      boardInstance.current = window.ChessBoard(boardContainerRef.current, {
-        ...config,
-        onDrop: (source, target) => {
-          const move = game.current.move({
-            from: source,
-            to: target,
-            promotion: "q",
-          });
+    // Solo inicializamos una vez
+    boardRef.current = window.ChessBoard(containerRef.current, {
+      draggable: true,
+      position: game.fen(),
+      onDragStart: (source, piece) => onDragStartLogic(piece),
+      onDrop: (source, target) => {
+        const move = onDropLogic(source, target);
+        if (move === "snapback") return "snapback";
 
-          if (!move) return "snapback";
+        // Sincronizamos con React inmediatamente
+        onChange();
+      },
+      onSnapEnd: () => {
+        // Obliga al tablero visual a ponerse donde dice la lógica de chess.js
+        boardRef.current.position(game.fen());
+      },
+    });
 
-          boardInstance.current.position(game.current.fen());
-        },
-      });
-
-      const handleRightClick = (event) => {
-        event.preventDefault();
-        game.current.undo();
-        boardInstance.current.position(game.current.fen());
-      };
-
-      const node = boardContainerRef.current;
-      node.addEventListener("contextmenu", handleRightClick);
-
-      return () => {
-        node.removeEventListener("contextmenu", handleRightClick);
-      };
-    } else {
-      console.error("Chessboard no disponible");
-    }
-  }, [config]);
+    return () => boardRef.current?.destroy();
+  }, []); // El array vacío es vital para que no se duplique el tablero
 
   useImperativeHandle(ref, () => ({
-    start: () => {
-      game.current.reset();
-      boardInstance.current?.position("start");
+    reset() {
+      game.reset();
+      boardRef.current.position("start");
+      onChange();
     },
-    clear: () => {
-      game.current.clear();
-      boardInstance.current?.position({});
+    undo() {
+      game.undo();
+      boardRef.current.position(game.fen());
+      onChange();
     },
-    undo: () => {
-      game.current.undo();
-      boardInstance.current?.position(game.current.fen());
-    },
-    getFEN: () => game.current.fen(),
   }));
+
   return (
-    <div
-      ref={boardContainerRef}
-      style={{ width: "700px", margin: "0 auto" }}
-    ></div>
+    <div ref={containerRef} style={{ width: "400px", margin: "0 auto" }} />
   );
 });
 
