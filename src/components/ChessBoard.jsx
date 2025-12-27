@@ -1,7 +1,15 @@
 import { useEffect, useRef, forwardRef, useImperativeHandle } from "react";
-import { game, onDragStartLogic, onDropLogic } from "../utils/chessFunctions";
+import {
+  game,
+  isPromotionMove,
+  onDragStartLogic,
+  onDropLogic,
+} from "../utils/chessFunctions";
 
-const ChessBoard = forwardRef(function ChessBoard({ onChange }, ref) {
+const ChessBoard = forwardRef(function ChessBoard(
+  { onChange, onPromotionRequest },
+  ref
+) {
   const containerRef = useRef(null);
   const boardRef = useRef(null); // Aquí vive el tablero real
 
@@ -10,9 +18,22 @@ const ChessBoard = forwardRef(function ChessBoard({ onChange }, ref) {
     boardRef.current = window.ChessBoard(containerRef.current, {
       draggable: true,
       position: game.fen(),
-      onDragStart: (source, piece) => onDragStartLogic(piece),
-      onDrop: (source, target) => {
-        const move = onDropLogic(source, target);
+      // DEBEMOS darle como paremetro source, position y orientation aunque no los usemos porque
+      // si no Chessboard.js falla al pensar que si juegas en la columna b es porque va el negro.
+      onDragStart: (source, piece, position, orientation) => {
+        return onDragStartLogic(source, piece, position, orientation);
+      },
+      onDrop: (source, target, piece) => {
+        if (isPromotionMove(source, target)) {
+          onPromotionRequest({
+            color: game.turn(),
+            from: source,
+            to: target,
+          });
+          return;
+        }
+
+        const move = onDropLogic(source, target, piece);
         if (move === "snapback") return "snapback";
 
         // Sincronizamos con React inmediatamente
@@ -25,7 +46,7 @@ const ChessBoard = forwardRef(function ChessBoard({ onChange }, ref) {
     });
 
     return () => boardRef.current?.destroy();
-  }, []); // El array vacío es vital para que no se duplique el tablero
+  }, [onChange]); // El array vacío es vital para que no se duplique el tablero
 
   useImperativeHandle(ref, () => ({
     reset() {
